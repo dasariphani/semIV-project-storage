@@ -5,7 +5,7 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 from .database import get_db
-from models import User
+from .models import User
 import bcrypt
 
 router = APIRouter()

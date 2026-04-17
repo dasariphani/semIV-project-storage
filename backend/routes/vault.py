@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from ..database import get_db, Base
 from auth import get_current_user
-from models import User
+from ..models import User
 from he_engine import generate_keys, encrypt_vector, decrypt_vector, add_encrypted
 import base64, os, uuid, shutil, json, datetime
 
