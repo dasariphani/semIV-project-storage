@@ -3,7 +3,7 @@ import { useState } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 
-const API = window.location.origin + '/api'
+const API = '/api'
 
 export default function Login() {
     const [email, setEmail] = useState('')
