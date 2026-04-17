@@ -27,7 +27,6 @@ rsa==4.9.1
 six==1.17.0
 SQLAlchemy==2.0.48
 starlette==0.52.1
-tenseal==0.3.16
 typing-inspection==0.4.2
 typing_extensions==4.15.0
 uvicorn==0.42.0
