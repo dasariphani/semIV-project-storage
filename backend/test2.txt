@@ -1,0 +1,6 @@
+Student Rahul Sharma
+Math Score 92
+Physics Score 88
+Chemistry Score 76
+Total 256
+Grade A

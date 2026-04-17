@@ -1,0 +1,14 @@
+Name: John Doe
+Age: 25
+Salary: 50000
+Department: Computer Science
+Grade: A
+
+These numbers are encrypted using Homomorphic Encryption.
+The server never sees this data in plain text.
+Only the owner with the private key can decrypt this.
+
+Sample values for HE computation:
+Value 1: 10.5
+Value 2: 20.3
+Value 3: 15.7

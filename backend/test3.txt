@@ -1,0 +1,6 @@
+Student: Priya Patel
+Math Score: 85
+Physics Score: 91
+Chemistry Score: 89
+Total: 265
+Grade: A+
