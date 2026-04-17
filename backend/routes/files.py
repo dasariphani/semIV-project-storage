@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
-from database import get_db
+from ..database import get_db
 from models import File as FileModel, User, ActivityLog
 from auth import get_current_user
 import os, uuid, shutil

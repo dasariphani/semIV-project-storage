@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from pydantic import BaseModel
 from datetime import datetime, timedelta
-from database import get_db
+from .database import get_db
 from models import User
 import bcrypt
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from he_engine import (
+from ..he_engine import (
     generate_keys,
     encrypt_vector,
     decrypt_vector,
