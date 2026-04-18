@@ -7,7 +7,7 @@ except ImportError:
     print("Encryption Mode: Cloud Demo (Plaintext) Active")
 
 def create_context():
-    """Creates a CKKS context for encryption."""
+    """Creates a CKKS context or returns a dummy string in cloud mode."""
     if not TENSEAL_AVAILABLE:
         return "demo-context"
     
@@ -20,27 +20,25 @@ def create_context():
     context.global_scale = 2**40
     return context
 
-def encrypt_data(context, value: float):
-    """Encrypts a value if TenSEAL is available, otherwise returns raw value."""
+def generate_keys():
+    """The function your compute.py was looking for."""
     if not TENSEAL_AVAILABLE:
-        # In cloud demo mode, we just return the value as-is
-        return value
+        return "demo-public-key", "demo-private-key"
     
+    context = create_context()
+    # Serialize the context to send it as a string
+    return context.serialize().hex(), "secret-key-placeholder"
+
+def encrypt_data(context, value: float):
+    if not TENSEAL_AVAILABLE:
+        return value
     return ts.ckks_vector(context, [value])
 
 def decrypt_data(context, encrypted_vector):
-    """Decrypts data or returns it if already in plaintext."""
     if not TENSEAL_AVAILABLE:
         return encrypted_vector
-    
     return encrypted_vector.decrypt()[0]
 
-# Example of a computation function
-def perform_homomorphic_addition(vec1, vec2):
-    """Adds two values together."""
-    if not TENSEAL_AVAILABLE:
-        # Standard math for the website demo
-        return vec1 + vec2
-    
-    # Encrypted math for local environment
-    return vec1 + vec2
+def perform_computation(val1, val2):
+    """Standard addition for both encrypted and plain modes."""
+    return val1 + val2
