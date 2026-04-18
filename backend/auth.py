@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+from .schemas import UserCreate, UserLogin
 
-# THE CRITICAL RELATIVE IMPORTS
+# THE CRITICAL DOTS
 from .database import get_db
 from .models import User
 from .schemas import UserCreate, UserLogin
