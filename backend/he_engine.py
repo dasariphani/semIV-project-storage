@@ -1,46 +1,46 @@
-import tenseal as ts
-import base64
+try:
+    import tenseal as ts
+    TENSEAL_AVAILABLE = True
+    print("Encryption Mode: TenSEAL (CKKS) Active")
+except ImportError:
+    TENSEAL_AVAILABLE = False
+    print("Encryption Mode: Cloud Demo (Plaintext) Active")
 
-def generate_keys():
+def create_context():
+    """Creates a CKKS context for encryption."""
+    if not TENSEAL_AVAILABLE:
+        return "demo-context"
+    
     context = ts.context(
         ts.SCHEME_TYPE.CKKS,
         poly_modulus_degree=8192,
         coeff_mod_bit_sizes=[60, 40, 40, 60]
     )
-    context.generate_galois_keys()
+    context.generate_relin_keys()
     context.global_scale = 2**40
-    context_bytes = context.serialize(save_secret_key=True)
-    public_context_bytes = context.serialize(save_secret_key=False)
-    return context_bytes, public_context_bytes
+    return context
 
-def encrypt_vector(context_bytes: bytes, data: list) -> bytes:
-    context = ts.context_from(context_bytes)
-    encrypted = ts.ckks_vector(context, data)
-    return encrypted.serialize()
+def encrypt_data(context, value: float):
+    """Encrypts a value if TenSEAL is available, otherwise returns raw value."""
+    if not TENSEAL_AVAILABLE:
+        # In cloud demo mode, we just return the value as-is
+        return value
+    
+    return ts.ckks_vector(context, [value])
 
-def decrypt_vector(context_bytes: bytes, ciphertext_bytes: bytes) -> list:
-    context = ts.context_from(context_bytes)
-    encrypted = ts.lazy_ckks_vector_from(ciphertext_bytes)
-    encrypted.link_context(context)
-    result = encrypted.decrypt()
-    if hasattr(result, 'tolist'):
-        return result.tolist()
-    return list(result)
+def decrypt_data(context, encrypted_vector):
+    """Decrypts data or returns it if already in plaintext."""
+    if not TENSEAL_AVAILABLE:
+        return encrypted_vector
+    
+    return encrypted_vector.decrypt()[0]
 
-def add_encrypted(public_context_bytes: bytes, ct1_bytes: bytes, ct2_bytes: bytes) -> bytes:
-    context = ts.context_from(public_context_bytes)
-    ct1 = ts.lazy_ckks_vector_from(ct1_bytes)
-    ct2 = ts.lazy_ckks_vector_from(ct2_bytes)
-    ct1.link_context(context)
-    ct2.link_context(context)
-    result = ct1 + ct2
-    return result.serialize()
-
-def multiply_encrypted(public_context_bytes: bytes, ct1_bytes: bytes, ct2_bytes: bytes) -> bytes:
-    context = ts.context_from(public_context_bytes)
-    ct1 = ts.lazy_ckks_vector_from(ct1_bytes)
-    ct2 = ts.lazy_ckks_vector_from(ct2_bytes)
-    ct1.link_context(context)
-    ct2.link_context(context)
-    result = ct1 * ct2
-    return result.serialize()
+# Example of a computation function
+def perform_homomorphic_addition(vec1, vec2):
+    """Adds two values together."""
+    if not TENSEAL_AVAILABLE:
+        # Standard math for the website demo
+        return vec1 + vec2
+    
+    # Encrypted math for local environment
+    return vec1 + vec2
