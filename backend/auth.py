@@ -1,61 +1,66 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
+from jose import JWTError, jwt
 from passlib.context import CryptContext
-
-# THE CRITICAL RELATIVE IMPORTS (Preserving the dots)
-from .database import get_db
-from .models import User
-from .schemas import UserCreate, UserLogin
+from pydantic import BaseModel
+from datetime import datetime, timedelta
+from database import get_db
+from models import User
 
 router = APIRouter()
 
-# Initializing the crypt context for bcrypt
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+SECRET_KEY = "supersecretkey123changethis"
+ALGORITHM  = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-def verify_password(plain_password, hashed_password):
-    """Verifies a plain password against the hash, with 72-byte truncation."""
-    # Truncate to 72 bytes to avoid Bcrypt ValueError
-    safe_password = plain_password.encode('utf-8')[:72]
-    return pwd_context.verify(safe_password, hashed_password)
+pwd_context   = CryptContext(schemes=["bcrypt"], deprecated="auto")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-def get_password_hash(password):
-    """Hashes a password after truncating it to 72 bytes."""
-    # Bcrypt cannot handle more than 72 bytes. 
-    # We truncate manually to prevent the 'ValueError' we saw in the logs.
-    safe_password = password.encode('utf-8')[:72]
-    return pwd_context.hash(safe_password)
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+
+def hash_password(password: str):
+    return pwd_context.hash(password)
+
+def verify_password(plain: str, hashed: str):
+    return pwd_context.verify(plain, hashed)
+
+def create_token(data: dict):
+    to_encode = data.copy()
+    expire    = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email   = payload.get("sub")
+        if email is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        raise HTTPException(status_code=401, detail="User not found")
+    return user
 
 @router.post("/register")
-def register(user: UserCreate, db: Session = Depends(get_db)):
-    # 1. Check if user exists
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if db_user:
+def register(req: RegisterRequest, db: Session = Depends(get_db)):
+    existing = db.query(User).filter(User.email == req.email).first()
+    if existing:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # 2. Hash the password safely
-    try:
-        hashed_password = get_password_hash(user.password)
-        
-        # 3. Save to database
-        new_user = User(email=user.email, hashed_password=hashed_password)
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        return {"message": "User created successfully", "status": "success"}
-    except Exception as e:
-        # Catching any other potential hashing/DB errors
-        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+    user = User(email=req.email, password=hash_password(req.password))
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return {"message": "User registered", "user_id": user.id}
 
 @router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == user.email).first()
-    
-    # Verify existence and password
-    if not db_user or not verify_password(user.password, db_user.hashed_password):
+def login(form: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.email == form.username).first()
+    if not user or not verify_password(form.password, user.password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
-    return {
-        "message": "Login successful", 
-        "email": db_user.email,
-        "status": "success"
-    }
+    token = create_token({"sub": user.email})
+    return {"access_token": token, "token_type": "bearer"}

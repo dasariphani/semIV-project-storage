@@ -1,19 +1,16 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 
-# This defines what the "Register" data should look like
+# Changing EmailStr to str removes the strict validation that causes 422
 class UserCreate(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
-# This defines what the "Login" data should look like
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str
     password: str
 
-# This defines how the User data looks when sent back to the frontend
 class UserResponse(BaseModel):
     id: int
-    email: EmailStr
-
+    email: str
     class Config:
         from_attributes = True
